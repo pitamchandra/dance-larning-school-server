@@ -28,39 +28,24 @@ async function run() {
     await client.connect();
 
 
-
-
-
-
     const usersCollection = client.db("dance-club").collection("users");
+    const instructorsCollection = client.db("dance-club").collection('instructors')
     const classCollection = client.db("dance-club").collection("class");
+    const cartCollection = client.db("dance-club").collection("cart");
 
 
-    app.post('/jwt', (req,res)=>{
-        const user = req.body;
-        const token = jwt.sign(user, process.env.ACCESS_TOKEN,  { expiresIn: '1h' });
-        console.log(token)
-        res.send(token)
-      })
-
-    // user data
-    app.get('/users', async (req, res) => {
+      // user data
+      app.get('/users', async (req, res) => {
         const result = await usersCollection.find().toArray();
         res.send(result);
       });
 
 
-      app.get('/users/admin/:email',  async (req, res) => {
+      app.get('/users/admin/:email', async (req, res) => {
         const email = req.params.email;
-  
-        // if (req.decoded.email !== email) {
-        //   res.send({ admin: false })
-        // }
-  
         const query = { email: email }
         const user = await usersCollection.findOne(query);
         const result = { admin: user?.role === 'admin' }
-        console.log(result)
         res.send(result);
       })
 
@@ -132,6 +117,30 @@ async function run() {
       const result = await classCollection.insertOne(addClass)
       res.send(result)
     })
+
+          // cart collection
+          app.get("/carts", async(req, res)=>{
+            // const email = req.query.email;
+      
+            // if (!email) {
+            //  return res.send([]);
+            // }
+            // const query = { email: email };
+            // const result = await cartCollection.find(query).toArray();
+            // res.send(result); 
+            const result = await cartCollection.find().toArray();
+            res.send(result);
+          })
+    
+    
+        // cart data post
+        app.post("/carts", async(req,res)=>{
+          const item = req.body;
+          console.log(item);
+          const result = await cartCollection.insertOne(item);
+           res.send(result);
+        })
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
