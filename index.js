@@ -60,6 +60,14 @@ async function run() {
       res.send(result);
     })
 
+    // instructor 
+    app.get('/users/instractor/', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email }
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    })
+
 
     app.patch('/user/admin/:id', async (req, res) => {
       const id = req.params.id;
