@@ -29,10 +29,12 @@ async function run() {
 
 
     const usersCollection = client.db("dance-club").collection("users");
-    const instructorsCollection = client.db("dance-club").collection('instructors')
+    // const instructorsCollection = client.db("dance-club").collection('instructors')
     const classCollection = client.db("dance-club").collection("class");
     const cartCollection = client.db("dance-club").collection("cart");
     const feedbackCollection = client.db("dance-club").collection("feedback");
+    const paymentCollection = client.db("dance-club").collection("payment");
+
 
       // user data
     app.get('/users', async (req, res) => {
@@ -210,10 +212,99 @@ async function run() {
       const result = await feedbackCollection.find().toArray()
       res.send(result)
     })
+
+// strip payment coded
+app.post('/create-payment', async (req, res) => {
+  const { price } = req.body;
+  const amount = parseInt(price * 100);
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: 'usd',
+    payment_method_types: ['card']
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret
+  })
+})
+
+
+app.post('/payments', async (req, res) => {
+  try {
+    const payment = req.body;
+    const insertResult = await paymentCollection.insertOne(payment);
+    const updateResult = await classCollection.updateOne(
+      { _id: new ObjectId(payment.cartItems) },
+      { $inc: { seats: -1 } }
+    );
+
+    const deleteResult = await cartCollection.deleteOne({ _id: new ObjectId(payment.cartItems) });
+
+    res.send({ insertResult, updateResult, deleteResult });
+  } catch (error) {
+    res.status(500).send({ error: 'Payment processing failed' });
+  }
+})
+
+
+// enroll
+app.get('/payments', async (req, res) => {
+  let query = {}
+  if (req.query?.email) {
+    query = { email: req.query.email }
+  }
+  const result = await paymentCollection.find(query).toArray()
+  res.send(result)
+})// strip payment coded
+app.post('/create-payment', async (req, res) => {
+  const { price } = req.body;
+  const amount = parseInt(price * 100);
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: 'usd',
+    payment_method_types: ['card']
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret
+  })
+})
+
+
+app.post('/payments', async (req, res) => {
+  try {
+    const payment = req.body;
+    const insertResult = await paymentCollection.insertOne(payment);
+    const updateResult = await classCollection.updateOne(
+      { _id: new ObjectId(payment.cartItems) },
+      { $inc: { seats: -1 } }
+    );
+
+    const deleteResult = await cartCollection.deleteOne({ _id: new ObjectId(payment.cartItems) });
+
+    res.send({ insertResult, updateResult, deleteResult });
+  } catch (error) {
+    res.status(500).send({ error: 'Payment processing failed' });
+  }
+})
+
+
+// enroll
+app.get('/payments', async (req, res) => {
+  let query = {}
+  if (req.query?.email) {
+    query = { email: req.query.email }
+  }
+  const result = await paymentCollection.find(query).toArray()
+  res.send(result)
+})
+
+    
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
