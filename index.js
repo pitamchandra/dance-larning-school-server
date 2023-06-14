@@ -32,9 +32,8 @@ async function run() {
     const instructorsCollection = client.db("dance-club").collection('instructors')
     const classCollection = client.db("dance-club").collection("class");
     const cartCollection = client.db("dance-club").collection("cart");
+    const feedbackCollection = client.db("dance-club").collection("feedback");
 
-
-      // user data
       // user data
     app.get('/users', async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -156,7 +155,7 @@ async function run() {
         $set: {
           photo: updateClass.photo,
           price: updateClass.price,
-          catagory: updateClass.catagory,
+          category: updateClass.category,
           seats: updateClass.seats
         },
       };
