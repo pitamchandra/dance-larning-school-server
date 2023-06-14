@@ -61,9 +61,8 @@ async function run() {
     })
 
     // instructor 
-    app.get('/users/instractor/', async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email }
+    app.get('/users/instractor', async (req, res) => {
+      const query = { role: "instractor" }
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     })
