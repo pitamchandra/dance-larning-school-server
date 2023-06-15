@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 require('dotenv').config()
 const port = process.env.PORT || 5000;
-
+const stripe = require('stripe')(process.env.PAYMENT)
 // middleware
 app.use(cors())
 app.use(express.json())
@@ -213,93 +213,52 @@ async function run() {
       res.send(result)
     })
 
-// strip payment coded
-app.post('/create-payment', async (req, res) => {
-  const { price } = req.body;
-  const amount = parseInt(price * 100);
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount,
-    currency: 'usd',
-    payment_method_types: ['card']
-  });
+    // strip payment coded
+    app.post('/create-payment', async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
 
-  res.send({
-    clientSecret: paymentIntent.client_secret
-  })
-})
-
-
-app.post('/payments', async (req, res) => {
-  try {
-    const payment = req.body;
-    const insertResult = await paymentCollection.insertOne(payment);
-    const updateResult = await classCollection.updateOne(
-      { _id: new ObjectId(payment.cartItems) },
-      { $inc: { seats: -1 } }
-    );
-
-    const deleteResult = await cartCollection.deleteOne({ _id: new ObjectId(payment.cartItems) });
-
-    res.send({ insertResult, updateResult, deleteResult });
-  } catch (error) {
-    res.status(500).send({ error: 'Payment processing failed' });
-  }
-})
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
 
 
-// enroll
-app.get('/payments', async (req, res) => {
-  let query = {}
-  if (req.query?.email) {
-    query = { email: req.query.email }
-  }
-  const result = await paymentCollection.find(query).toArray()
-  res.send(result)
-})// strip payment coded
-app.post('/create-payment', async (req, res) => {
-  const { price } = req.body;
-  const amount = parseInt(price * 100);
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount,
-    currency: 'usd',
-    payment_method_types: ['card']
-  });
+    app.post('/payments', async (req, res) => {
+      try {
+        const payment = req.body;
+        const insertResult = await paymentCollection.insertOne(payment);
+        const updateResult = await classCollection.updateOne(
+          { _id: new ObjectId(payment.cartItems) },
+          { $inc: { seats: -1 } }
+        );
 
-  res.send({
-    clientSecret: paymentIntent.client_secret
-  })
-})
+        const deleteResult = await cartCollection.deleteOne({ _id: new ObjectId(payment.cartItems) });
+
+        res.send({ insertResult, updateResult, deleteResult });
+      } catch (error) {
+        res.status(500).send({ error: 'Payment processing failed' });
+      }
+    })
 
 
-app.post('/payments', async (req, res) => {
-  try {
-    const payment = req.body;
-    const insertResult = await paymentCollection.insertOne(payment);
-    const updateResult = await classCollection.updateOne(
-      { _id: new ObjectId(payment.cartItems) },
-      { $inc: { seats: -1 } }
-    );
-
-    const deleteResult = await cartCollection.deleteOne({ _id: new ObjectId(payment.cartItems) });
-
-    res.send({ insertResult, updateResult, deleteResult });
-  } catch (error) {
-    res.status(500).send({ error: 'Payment processing failed' });
-  }
-})
+    // enroll
+    app.get('/payments', async (req, res) => {
+      let query = {}
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await paymentCollection.find(query).toArray()
+      res.send(result)
+    })
 
 
-// enroll
-app.get('/payments', async (req, res) => {
-  let query = {}
-  if (req.query?.email) {
-    query = { email: req.query.email }
-  }
-  const result = await paymentCollection.find(query).toArray()
-  res.send(result)
-})
 
-    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
